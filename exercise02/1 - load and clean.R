@@ -9,6 +9,9 @@
 
 library(xml2)
 library(magrittr)
+library(dplyr)
+library(stringi)
+library(tm)
 library(jsonlite)
 
 ##### Read in the raw data files and process into data frames ##### 
@@ -112,3 +115,64 @@ summary(events[7:8])
 which(events$Longitude < -180)
     # one event with out of bounds longitude. Mark it missing.
 events$Longitude[2803] <- NA
+
+### Impute missing values where possible ###
+select(events, InjurySeverity, TotalFatalInjuries:TotalUninjured) %>%
+    filter(InjurySeverity == "Non-Fatal") %>% summary
+# For non-fatal crashes, set missing Total and Fraction fatal to 0
+events[events$InjurySeverity == "Non-Fatal", "TotalFatalInjuries"] <- 0
+# For serious and minor injuries, assume NA = 0
+events[is.na(events$TotalSeriousInjuries), "TotalSeriousInjuries"] <- 0
+events[is.na(events$TotalMinorInjuries), "TotalMinorInjuries"] <- 0
+    # For total uninjured NA's, we can't really impute anything
+
+## Use same Model to fill in missing NumberOfEngines
+events$Model <- toupper(events$Model)
+# create a list of unique models and their number of engines
+ModelAndEngines <-select(events, Model, NumberOfEngines) %>% 
+    filter(!is.na(Model)) %>% filter(!is.na(NumberOfEngines))
+ModelAndEngines$Model <- removePunctuation(ModelAndEngines$Model) %>%
+    stripWhitespace %>%
+    stri_trim_both
+ModelAndEngines <- unique(ModelAndEngines) %>%
+    arrange(Model, desc(NumberOfEngines))
+ModelAndEngines <- ModelAndEngines[-which(duplicated(ModelAndEngines$Model)), ]
+ModelAndEngines <- ModelAndEngines[-1, ]  # first row has " " model
+# find the row numbers for the observations with missing number of engines
+missingEngines <- which(is.na(events$NumberOfEngines))
+# fill in the missing values if possible
+for (i in missingEngines) {
+    tempModel <- events[i, "Model"]
+    tempModel <- removePunctuation(tempModel) %>% stripWhitespace %>%
+        stri_trim_both
+    tempNumEng <- ModelAndEngines[ModelAndEngines$Model == tempModel, 2]
+    if (tempModel %in% ModelAndEngines$Model) {
+        events$NumberOfEngines[i] <- tempNumEng
+    }
+}
+summary(events$NumberOfEngines)
+# For Number of Engines, 1st quartile, median, and 3rd quartile all equal 1.
+# Impute remaining NumberOfEngines NA's as 1 as that is most likely.
+events[is.na(events$NumberOfEngines), "NumberOfEngines"] <- 1
+
+# Some factor variables have empty string for a label; replace as "(missing)"
+levels(events$AircraftDamage)[1] <- "(missing)"
+levels(events$AircraftCategory)[1] <- "(missing)"
+levels(events$AmateurBuilt)[1] <- "(missing)"
+levels(events$EngineType)[1] <- "(missing)"
+levels(events$FARDescription)[1] <- "(missing)"
+levels(events$Schedule)[1] <- "(missing)"
+levels(events$PurposeOfFlight)[1] <- "(missing)"
+levels(events$WeatherCondition)[1] <- "(missing)"
+levels(events$BroadPhaseOfFlight)[1] <- "(missing)"
+
+# Other character variables have "" values; change to "(missing)"
+events[events$Location == "", "Location"] <- "(missing)"
+events[events$Country == "", "Country"] <- "(missing)"
+events[events$AirportCode == "", "AirportCode"] <- "(missing)"
+events[events$AirportName == "", "AirportName"] <- "(missing)"
+events[events$InjurySeverity == "", "InjurySeverity"] <- "(missing)"
+events[events$RegistrationNumber == "", "RegistrationNumber"] <- "(missing)"
+events[events$Make == "", "Make"] <- "(missing)"
+events[events$Model == "", "Model"] <- "(missing)"
+events[events$AirCarrier == "", "AirCarrier"] <- "(missing)"

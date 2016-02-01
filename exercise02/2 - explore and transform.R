@@ -9,6 +9,7 @@
 ####################################################################
 
 library(magrittr)
+library(readr)
 
 # Basic summaries of the events data
 table(events$InvestigationType, useNA = "ifany")  
@@ -49,10 +50,23 @@ incidents[which(incidents$TotalFatalInjuries > 0), ]
 passengers <- events[, c("TotalFatalInjuries", "TotalSeriousInjuries",
                          "TotalMinorInjuries", "TotalUninjured")]
 events$TotalPassengers <- rowSums(passengers, na.rm = T)
-# If all four categories are missing, mare TotalPassengers as missing.
+# If all four categories are missing, set TotalPassengers as missing.
 # Otherwise assume TotalPassengers is the sum of the non-missing categories.
 allmissing <- rowSums(is.na(passengers)) == 4
 events$TotalPassengers <- events$TotalPassengers * ifelse(allmissing, NA, 1)
 summary(events$TotalPassengers)
-    # 662 events with no passenger information
-    # median is 2; at least half of all incidents have two or fewer passengers
+    # no events without any passenger information at all
+    # median is 2; 3rd quartile is 2;
+    # at least 75% of all incidents have two or fewer passengers
+
+# Create variables for fraction of passengers killed, injured, or uninjured
+events$FractionFatalInjuries <- events$TotalFatalInjuries / 
+    events$TotalPassengers
+events$FractionSeriousInjuries <- events$TotalSeriousInjuries / 
+    events$TotalPassengers
+events$FractionMinorInjuries <- events$TotalMinorInjuries /
+    events$TotalPassengers
+events$FractionUninjured <- events$TotalUninjured / events$TotalPassengers
+
+# Write an output file
+write_delim(events, path = "events.csv", delim = "*")

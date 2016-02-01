@@ -184,7 +184,7 @@ names(probClus4Terms)[3:22]
 narrativeFinal <- data.frame(EventID = colnames(narrativeLSA),
                              NarrativeCluster=narrative3Clusters$clustering)
 rownames(narrativeFinal) <- NULL
-probable_causeFinal <- data.frame(EventID = colnames(probcauseLSA),
+probable_causeFinal <- data.frame(EventId = colnames(probcauseLSA),
                           ProbableCauseCluster=probcause4Clusters$clustering)
 rownames(probable_causeFinal) <- NULL
 textFinal <- merge(x = narrativeFinal, y = probable_causeFinal, all = T)

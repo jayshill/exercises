@@ -9,7 +9,7 @@
 
 A walkthrough of the analysis with R code and associated output is presented here:
 
-- `0 - final code needed for report.html`
+- `0 - final code needed for report.pdf`
 
 A more exhaustive breakdown of the code is included in these separate files:
 

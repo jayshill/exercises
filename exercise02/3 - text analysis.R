@@ -181,7 +181,7 @@ names(probClus4Terms)[3:22]
 
 
 ##### Compare narrative and probable cause clusters #####
-narrativeFinal <- data.frame(EventID = colnames(narrativeLSA),
+narrativeFinal <- data.frame(EventId = colnames(narrativeLSA),
                              NarrativeCluster=narrative3Clusters$clustering)
 rownames(narrativeFinal) <- NULL
 probable_causeFinal <- data.frame(EventId = colnames(probcauseLSA),

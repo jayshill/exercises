@@ -3,6 +3,9 @@
 #   NTSB database of aviation accidents                            #
 #   Jay Hill                                                       #
 #                                                                  #
+#   This script covers the analysis of the combined events and     #
+#   narratives data. Various tables and figures along with some    #
+#   code to process the data as needed for each analysis.          #
 ####################################################################
 
 library(dplyr)
@@ -11,6 +14,7 @@ library(ggplot2)
 library(scales)
 library(lubridate)
 library(reshape2)
+library(ggthemes)
 
 # Add the text clusters to the 'events' data frame
 events <- merge(x = events, y = textFinal, all.x = T)
@@ -98,6 +102,7 @@ gg3 <- ggplot(eventsGrouped3, aes(x = EventYearOnly, y = NumberPerYear,
 gg3
     # Fatal injuries are the most common, serious are least common
 
+
 ##### Relationships between aircraft damage and casualties #####
 table(events$AircraftDamage, events$InvestigationType)
     # Most incidents had minor aircraft damage; most accidents had substantial
@@ -149,6 +154,72 @@ print(gg3, vp = viewport(layout.pos.row = 2, layout.pos.col = 1))
 print(gg4, vp = viewport(layout.pos.row = 2, layout.pos.col = 2))
 
 
+##### Final Figures #####
+ggAfinal <- ggplot(by_cluster, aes(x = as.Date(as.character(EventYear)), 
+                              y = numPerClusterPerYear)) + 
+    geom_area(aes(colour = as.character(NarrativeCluster), 
+                  fill = as.character(NarrativeCluster))) +
+    theme_hc() +
+    theme(plot.title = element_text(size = 14), 
+          legend.margin = unit(0, "cm")) +
+    scale_color_brewer(type = "qual", palette = 7, name = "Narrative Cluster") +
+    scale_fill_brewer(type = "qual", palette = 7, name = "Narrative Cluster") +
+    xlab("Year") +
+    ylab("Number of Events Per Year") +
+    ggtitle("Aviation Accidents by Narrative Cluster Over Time")
+ggAfinal
+
+
+
+ggBfinal <- ggplot(eventsGrouped3, aes(x = EventYearOnly, y = NumberPerYear, 
+                                  group = Injuries, color = Injuries)) +
+    geom_line(size = 2) +
+    scale_x_continuous(breaks = seq(1985, 2015, 5)) +
+    theme_hc() +
+    theme(panel.background = element_rect(fill = 'lightgray'),
+          legend.margin = unit(0, "cm")) +
+    scale_color_brewer(type = "seq", palette = 1, direction = -1,
+                       labels = c("Fatal", "Serious", "Minor")) +
+    xlab("Year") +
+    ylab("Number of Injuries per Year") +
+    ggtitle("Passenger Injuries Over Time")
+ggBfinal
+
+
+
+
+ggCfinal <- ggplot(filter(events, AircraftDamage != "(missing)"), 
+              aes(x = EventMonthName)) +
+    geom_bar(aes(fill = AircraftDamage)) +
+    scale_x_discrete(breaks = c("January", "March", "May", "July", "September",
+                                "November")) +
+    theme_hc() +
+    theme(panel.background = element_rect(fill = 'lightgray'),
+          legend.margin = unit(0, "cm")) +
+    scale_fill_brewer(type = "seq", palette = 7, 
+                      name = "Aircraft Damage Level") +
+    xlab("Month") +
+    ylab("Number of Events per Month") +
+    ggtitle("Total Aviation Accidents per Month")
+ggCfinal
+
+
+
+ggDfinal <- ggplot(filter(events, AircraftDamage == "Destroyed", !is.na(NarrativeCluster)),
+              aes(x = AircraftDamage, y = FractionFatalInjuries)) +
+    geom_violin(aes(fill = as.character(NarrativeCluster))) +
+    scale_x_discrete(breaks = "") +
+    theme_hc() +
+    theme(legend.margin = unit(0, "cm")) +
+    scale_color_brewer(type = "qual", palette = 7, name = "Narrative Cluster") +
+    scale_fill_brewer(type = "qual", palette = 7, name = "Narrative Cluster") +
+    xlab("") +
+    ylab("Fatal Fraction of Injuries") +
+    ggtitle("Fatal Injuries for Destroyed Aircraft Events by Cluster")
+ggDfinal
+
+
+
 ##### Export figures #####
 gg1
 ggsave("roughFigs\\gg1.png")
@@ -158,3 +229,18 @@ gg3
 ggsave("roughFigs\\gg3.png")
 gg4
 ggsave("roughFigs\\gg4.png")
+
+ggAfinal
+ggsave("finalFigs\\A.png", width = 3.5, height = 2.1, units = "in")
+unlink("finalFigs\\A.png")
+ggBfinal
+ggsave("finalFigs\\B.png", width = 3.5, height = 2.1, units = "in")
+unlink("finalFigs\\B.png")
+ggCfinal
+ggsave("finalFigs\\C.png", width = 3.5, height = 2.1, units = "in")
+unlink("finalFigs\\C.png")
+ggDfinal
+ggsave("finalFigs\\D.png", width = 3.5, height = 2.1, units = "in")
+unlink("finalFigs\\D.png")
+
+

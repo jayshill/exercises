@@ -7,7 +7,11 @@
 
 ### File Structure
 
-The following files are associated with the exploratory analysis of the NTSB database:
+A walkthrough of the analysis with R code and associated output is presented here:
+
+- `0 - final code needed for report.html`
+
+A more exhaustive breakdown of the code is included in these separate files:
 
 - `1 - load and clean.R` 
 
@@ -16,3 +20,4 @@ The following files are associated with the exploratory analysis of the NTSB dat
 - `3 - text analysis.R`
 
 - `4 - full analysis.R`
+
